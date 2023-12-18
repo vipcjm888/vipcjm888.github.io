@@ -1,2 +1,2 @@
 * [Home](/)
-* [Flowers](flowers.md)
+* [Flowers](/docs/flowers.md)
