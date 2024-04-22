@@ -1,0 +1,1 @@
+* [:book: Rust Course](/markdown/rust/rust-course/index.md)
