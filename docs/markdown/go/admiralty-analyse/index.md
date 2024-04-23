@@ -67,3 +67,171 @@
 ### 总结
 
 Pod伴侣注释被用作代理调度器和候选调度器之间的双向跨集群通讯通道，以协调调度和绑定周期。当调度一个代理Pod（将其绑定到一个虚拟节点）时，代理调度器对目标集群知之甚少。它不基于聚合数据进行过滤，因为这可能不准确。相反，它将候选Pod发送至所有目标集群。候选调度器拥有确定这些Pod是否可以被调度所需的所有情况。在基于聚合且足够的数据过滤通过的虚拟节点得分之后，代理调度器选出一个候选Pod作为委托Pod。最终，委托Pod被绑定，代理Pod也被绑定，而所有其他的候选Pod则被删除。
+
+## 源码剖析
+
+admiralty总共包含四个组件，由此挨个进行分析。
+
+> 1.admiralty-multicluster-scheduler-candidate-scheduler
+>
+> 2.admiralty-multicluster-scheduler-controller-manager
+>
+> 3.admiralty-multicluster-scheduler-proxy-scheduler
+>
+> 4.admiralty-multicluster-scheduler-restarter
+
+### admiralty-multicluster-scheduler-restarter
+
+这个组件的用途是持续监听集群内的Scret和自定义资源Target，将每个时刻的Target与Secret进行匹配，并记录在当前组件上下文中。当上一时刻的`Target-Secret`对与当前不同，则重启代理调度器`proxy-scheduler`与控制管理器`proxy-scheduler`，由它们更新`Virtual nodes`列表并完成跨集群调度工作。
+
+```go
+func main() {
+	stopCh := signals.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-stopCh
+		cancel()
+	}()
+
+	cfg, ns, err := config.ConfigAndNamespaceForKubeconfigAndContext("", "")
+	utilruntime.Must(err)
+
+	k, err := kubernetes.NewForConfig(cfg) //获取kubeconfig
+	utilruntime.Must(err)
+
+	customClient, err := client.NewForConfig(cfg) //创建出一个与集群资源交互的客户端
+	utilruntime.Must(err)
+
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(k, time.Second*30)          //创建 Kubernetes 的系统资源的 Informer 工厂
+	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30) //创建用户自定义的资源的 Informer 工厂
+	//创建 Kubernetes 的 Informer 工厂，用于生产 Informer 对象。Informer 对象主要用于监听（watch）Kubernetes 中的资源变化。
+	//这种机制可以高效地获取到集群中资源的实时状态信息，从而让我们能基于这些信息进行一系列的操作，如控制循环、事件触发等。
+
+	targetCtrl := target.NewController(k, ns,
+		os.Getenv("ADMIRALTY_CONTROLLER_MANAGER_DEPLOYMENT_NAME"),
+		os.Getenv("ADMIRALTY_PROXY_SCHEDULER_DEPLOYMENT_NAME"),
+		customInformerFactory.Multicluster().V1alpha1().ClusterTargets(), //创建一个用于监听 ClusterTargets 自定义资源的 Informer
+		customInformerFactory.Multicluster().V1alpha1().Targets(),        //创建一个用于监听 Targets 自定义资源的 Informer
+		kubeInformerFactory.Core().V1().Secrets())                        //创建一个用于监听核心 Kubernetes API 中 Secrets 资源的 Informer
+
+	kubeInformerFactory.Start(stopCh)
+	customInformerFactory.Start(stopCh)
+
+	var leaderElect bool
+	flag.BoolVar(&leaderElect, "leader-elect", false, "Start a leader election client and gain leadership before executing the main loop. Enable this when running replicated components for high availability.")
+	flag.Parse()
+
+	if leaderElect {
+		leaderelection.Run(ctx, ns, "admiralty-restarter", k, func(ctx context.Context) {
+			utilruntime.Must(targetCtrl.Run(1, stopCh))
+		})
+	} else {
+		utilruntime.Must(targetCtrl.Run(1, stopCh)) //持续监控Target资源并与当前上下文所记录的进行对比，如有更新则重启其他调度器
+	}
+}
+```
+
+### admiralty-multicluster-scheduler-controller-manager
+
+这个组件主要负责Virtual Node的生命周期管理，针对变异pod的WebHook服务创建，创建服务使得源集群可以对pod进行log,exec等操作。
+
+```go
+func main() {
+	stopCh := signals.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-stopCh
+		cancel()
+	}()
+	o := parseFlags()
+	setupLogging(ctx, o)
+	agentCfg := agentconfig.NewFromCRD(ctx)                                  //agentCfg 包含所有Target信息的KubeConfig
+	cfg, ns, err := config.ConfigAndNamespaceForKubeconfigAndContext("", "") //KubeConfig
+	utilruntime.Must(err)
+	k, err := kubernetes.NewForConfig(cfg) //KubeConfig Client
+	utilruntime.Must(err)
+	startWebhook(stopCh, cfg)                       //启动一个 Kubernetes Admission Webhook 服务，允许你在 Kubernetes API Server 处理请求之前或之后拦截这些请求，通过自定义逻辑修改或拒绝资源
+	go startVirtualKubeletServers(ctx, agentCfg, k) //创建一个 Server 用于处理针对 pod 的 log,exec 请求
+
+	if o.leaderElect {
+		leaderelection.Run(ctx, ns, "admiralty-controller-manager", k, func(ctx context.Context) {
+			runControllers(ctx, stopCh, agentCfg, cfg, k)
+		})
+	} else {
+		runControllers(ctx, stopCh, agentCfg, cfg, k) //将Targets数据转化为Virtual Node
+	}
+}
+```
+
+### admiralty-multicluster-scheduler-proxy-scheduler & admiralty-multicluster-scheduler-candidate-scheduler
+
+根据镜像运行参数选择某一个插件运行调度程序，它们各自实现了部分`k8s.io/kubernetes/pkg/scheduler/framework`调度组件中的接口。
+
+```go
+package main
+
+import (
+	"math/rand"
+	"os"
+	"time"
+
+	"admiralty.io/multicluster-scheduler/pkg/scheduler_plugins/candidate"
+	"admiralty.io/multicluster-scheduler/pkg/scheduler_plugins/proxy"
+	"github.com/spf13/pflag"
+	cliflag "k8s.io/component-base/cli/flag"
+	"k8s.io/component-base/logs"
+	scheduler "k8s.io/kubernetes/cmd/kube-scheduler/app"
+)
+
+func main() {
+	rand.Seed(time.Now().UnixNano())
+
+	// BEWARE candidate and proxy must run in different processes, because a scheduler only processes one pod at a time
+	// and proxy waits on candidates in filter plugin
+
+	command := scheduler.NewSchedulerCommand(
+		scheduler.WithPlugin(candidate.Name, candidate.New),
+		scheduler.WithPlugin(proxy.Name, proxy.New))
+
+	// TODO: once we switch everything over to Cobra commands, we can go back to calling
+	// utilflag.InitFlags() (by removing its pflag.Parse() call). For now, we have to set the
+	// normalize func and add the go flag set by hand.
+	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
+	// utilflag.InitFlags()
+	logs.InitLogs()
+	defer logs.FlushLogs()
+
+	if err := command.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+```
+
+```go
+// proxy/plugin.go
+type Plugin struct {
+	handle  framework.FrameworkHandle
+	targets map[string]*versioned.Clientset
+
+	failedNodeNamesByPodUID map[types.UID]map[string]bool
+	mx                      sync.RWMutex
+}
+
+var _ framework.FilterPlugin = &Plugin{}
+var _ framework.ReservePlugin = &Plugin{}
+var _ framework.UnreservePlugin = &Plugin{}
+var _ framework.PreBindPlugin = &Plugin{}
+var _ framework.PostBindPlugin = &Plugin{}
+```
+
+```go
+// candidate/plugin.go
+type Plugin struct {
+	handle framework.FrameworkHandle
+	client versioned.Interface
+}
+
+var _ framework.PreFilterPlugin = &Plugin{}
+var _ framework.ReservePlugin = &Plugin{}
+var _ framework.PreBindPlugin = &Plugin{}
+```
