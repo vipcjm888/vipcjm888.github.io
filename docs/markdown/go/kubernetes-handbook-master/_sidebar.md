@@ -1,10 +1,8 @@
-# 目录
-
-## 前言
+前言
 
 * [序言](/markdown/go/kubernetes-handbook-master/index.md)
 
-## 云原生
+云原生
 
 * [云原生的定义](/markdown/go/kubernetes-handbook-master/cloud-native/cloud-native-definition.md)
 * [云原生的设计哲学](/markdown/go/kubernetes-handbook-master/cloud-native/cloud-native-philosophy.md)
@@ -24,14 +22,14 @@
   * [Pulumi](/markdown/go/kubernetes-handbook-master/cloud-native/cloud-native-programming-language-pulumi.md)
 * [云原生的未来](/markdown/go/kubernetes-handbook-master/cloud-native/the-future-of-cloud-native.md)
 
-## 快速入门
+快速入门
 
 * [云原生新手入门指南](/markdown/go/kubernetes-handbook-master/cloud-native/quick-start.md)
 * [Play with Kubernetes](/markdown/go/kubernetes-handbook-master/cloud-native/play-with-kubernetes.md)
 * [快速部署一个云原生本地实验环境](/markdown/go/kubernetes-handbook-master/cloud-native/cloud-native-local-quick-start.md)
 * [使用 Rancher 在阿里云上部署 Kubenretes 集群](/markdown/go/kubernetes-handbook-master/cloud-native/setup-kubernetes-with-rancher-and-aliyun.md)
 
-## 概念与原理
+概念与原理
 
 * [Kubernetes 架构](/markdown/go/kubernetes-handbook-master/concepts/index.md)
   * [Kubernetes 的设计理念](/markdown/go/kubernetes-handbook-master/concepts/concepts.md)
@@ -105,7 +103,7 @@
 * [资源调度](/markdown/go/kubernetes-handbook-master/concepts/scheduling.md)
   * [服务质量等级（QoS）](/markdown/go/kubernetes-handbook-master/concepts/qos.md)
 
-## 用户指南
+用户指南
 
 * [用户指南概览](/markdown/go/kubernetes-handbook-master/guide/index.md)
 * [资源对象配置](/markdown/go/kubernetes-handbook-master/guide/resource-configuration.md)
@@ -140,7 +138,7 @@
   * [迁移传统应用到 Kubernetes 中 —— 以 Hadoop YARN 为例](/markdown/go/kubernetes-handbook-master/guide/migrating-hadoop-yarn-to-kubernetes.md)
   * [使用 StatefulSet 部署用状态应用](/markdown/go/kubernetes-handbook-master/guide/using-statefulset.md)
 
-## 最佳实践
+最佳实践
 
 * [最佳实践概览](/markdown/go/kubernetes-handbook-master/practice/index.md)
 * [在 CentOS 上部署 Kubernetes 集群](/markdown/go/kubernetes-handbook-master/practice/install-kubernetes-on-centos.md)
@@ -213,7 +211,7 @@
   * [开放策略代理（OPA）](/markdown/go/kubernetes-handbook-master/practice/open-policy-agent.md)
   * [云原生安全](/markdown/go/kubernetes-handbook-master/practice/cloud-native-security.md)
 
-## 服务网格
+服务网格
 
 * [服务网格（Service Mesh）](/markdown/go/kubernetes-handbook-master/usecases/service-mesh.md)
 * [企业级服务网格架构](/markdown/go/kubernetes-handbook-master/usecases/the-enterprise-path-to-service-mesh-architectures.md)
@@ -237,7 +235,7 @@
     * [Envoy 作为前端代理](/markdown/go/kubernetes-handbook-master/usecases/envoy-front-proxy.md)
     * [Envoy mesh 教程](/markdown/go/kubernetes-handbook-master/usecases/envoy-mesh-in-kubernetes-tutorial.md)
 
-## 领域应用
+领域应用
 
 * [领域应用概览](/markdown/go/kubernetes-handbook-master/usecases/index.md)
 * [微服务架构](/markdown/go/kubernetes-handbook-master/usecases/microservices.md)
@@ -257,7 +255,7 @@
 * [人工智能](/markdown/go/kubernetes-handbook-master/usecases/ai.md)
 * [可观察性](/markdown/go/kubernetes-handbook-master/usecases/observability.md)
 
-## 开发指南
+开发指南
 
 * [开发指南概览](/markdown/go/kubernetes-handbook-master/develop/index.md)
 * [SIG 和工作组](/markdown/go/kubernetes-handbook-master/develop/sigs-and-working-group.md)
@@ -274,7 +272,7 @@
 * [社区贡献](/markdown/go/kubernetes-handbook-master/develop/contribute.md)
 * [Minikube](/markdown/go/kubernetes-handbook-master/develop/minikube.md)
 
-## 社区及生态
+社区及生态
 
 * [云原生计算基金会（CNCF）](/markdown/go/kubernetes-handbook-master/cloud-native/cncf.md)
   * [CNCF 章程](/markdown/go/kubernetes-handbook-master/cloud-native/cncf-charter.md)
@@ -286,7 +284,7 @@
   * [认证 Kubernetes 服务提供商（KCSP）说明](/markdown/go/kubernetes-handbook-master/appendix/about-kcsp.md)
   * [认证 Kubernetes 管理员（CKA）说明](/markdown/go/kubernetes-handbook-master/appendix/about-cka-candidate.md)
 
-## 附录
+附录
 
 * [附录说明](/markdown/go/kubernetes-handbook-master/appendix/index.md)
 * [Kubernetes 中的应用故障排查](/markdown/go/kubernetes-handbook-master/appendix/debug-kubernetes-services.md)
