@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+</head>
+
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: '',
+      repo: '',
+      loadSidebar: true,
+      alias: {
+        "/proxy/(.*)":"https://vipcjm888.github.io/$1"
+      },
+      loadNavbar: true,
+      coverpage: true,
+      name: 'Taoyuebai',
+      nameLink: '/',
+      nativeEmoji: true,
+      notFoundPage: '_404.md',
+      relativePath: true,
+      repo: 'vipcjm888/vipcjm888.github.io',
+      subMaxLevel: 10,
+      routes:{
+
+      }
+    }
+  </script>
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
+  <script type="text/javascript">
+    let create_emoji = function (e) {
+      let get_rand_emoji = function () {
+        let emoji_dict = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😚', '😙', '😗', '😘', '😍', '😌', '😉', '🙃', '🙂', '😇', '😋', '😜', '😝', '😛', '🤑', '🤗', '🤓', '😎', '🤡', '🤠', '😖', '😣', '🙁', '😕', '😟', '😔', '😞', '😒', '😏', '😫', '😩', '😤', '😠', '😡', '😶', '😐', '😑', '😯', '😦', '😥', '😢', '😨', '😱', '😳', '😵', '😲', '😮', '😦', '🤤', '😭', '😪', '😴', '🙄', '🤔', '😬', '🤥', '🤐', '💩', '👺', '👹', '👿', '😈', '🤕', '🤒', '😷', '🤧', '🤢', '👻', '💀', '☠', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '🙏', '👏', '🙌', '👐', '😾', '😿', '🙀', '😽', '😼', '😻', '❤']
+        function getRndInteger(min, max) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        return emoji_dict[getRndInteger(0, emoji_dict.length - 1)]
+      }
+
+      let anim                                    // 动画计时器
+      let increase = 0                                 // 动画位置控制
+
+      let emoji = document.createElement("b")    // 创建一个元素
+      emoji.style.color = "#E94F06"     // 设置颜色
+      emoji.style.zIndex = 9999         // 设置置于顶层
+      emoji.style.position = "fixed" // 设置屏幕绝对定位
+      emoji.style.userSelect = "none"       // 设置不可选中
+      let x = e.clientX
+      let y = e.clientY          // 获取位置
+      emoji.style.left = (x - 10) + "px"
+      emoji.style.top = (y - 15) + "px"    // 将位置摆到中间
+      emoji.innerText = get_rand_emoji()                 // 获取随机表情
+      emoji.style.fontSize = Math.random() * 10 + 8 + "px"            // 大小
+      clearInterval(anim)                // 清除计时器
+      let $body = document.getElementsByTagName("body")[0]
+      $body.appendChild(emoji)                   // 添加元素
+      anim = setInterval(                    // 启动动画
+        function () {
+          if (++increase == 150) {
+            clearInterval(anim)
+            $body.removeChild(emoji)
+          }
+          // 移动元素
+          emoji.style.top = (y - 15) - increase + "px";
+          emoji.style.opacity = (150 - increase) / 120;
+        },
+        10
+      );
+    };
+
+    (function () {
+      let $html = document.getElementsByTagName("html")[0]
+
+      $html.onclick = function (e) {
+        create_emoji(e)
+      }
+    })();
+
+  </script>
+</body>
+
+</html>
